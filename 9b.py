@@ -1,5 +1,3 @@
-import collections
-
 stream = None
 with open('9.input', 'r') as handle:
     stream = handle.read().strip()
