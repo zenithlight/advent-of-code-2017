@@ -1,6 +1,12 @@
 import sys
 import collections
-import zmq
+import pika
+
+connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+channel = connection.channel()
+
+channel.queue_declare(queue=sys.argv[1])
+channel.queue_declare(queue=sys.argv[2])
 
 letters = list('abcdefghijklmnopqrstuvwxyz')
 
@@ -8,22 +14,6 @@ instructions = []
 registers = collections.defaultdict(int)
 
 registers['p'] = int(sys.argv[1])
-
-context = zmq.Context()
-
-publish = context.socket(zmq.PUB)
-subscribe = context.socket(zmq.SUB)
-
-try:
-    publish.bind('tcp://127.0.0.1:8000')
-except:
-    publish.connect('tcp://127.0.0.1:8000')
-
-subscribe.connect('tcp://127.0.0.1:8000')
-
-subscribe.setsockopt(zmq.SUBSCRIBE, sys.argv[2].encode('utf-8'))
-
-input() # both instances need to be connected before running for this to work
 
 with open('18.input', 'r') as handle:
     for line in handle:
@@ -40,17 +30,19 @@ number_of_sends = 0
 
 while 0 <= index < len(instructions):
     symbols = instructions[index]
-    print(registers, symbols)
 
     if symbols[0] == 'snd':
         number_of_sends += 1
-        publish.send_multipart([
-            sys.argv[1].encode('utf-8'),
-            str(get_value(symbols[1])).encode('utf-8')
-        ])
+        print(number_of_sends)
+        channel.basic_publish(exchange='', routing_key=sys.argv[2], body=str(get_value(symbols[1])))
 
     if symbols[0] == 'rcv':
-        registers[symbols[1]] = int(subscribe.recv())
+        placeholder = channel.basic_get(queue=sys.argv[1])[2]
+
+        while placeholder is None:
+            placeholder = channel.basic_get(queue=sys.argv[1])[2]
+
+        registers[symbols[1]] = int(placeholder)
 
     if symbols[0] == 'set':
         registers[symbols[1]] = get_value(symbols[2])
@@ -71,4 +63,4 @@ while 0 <= index < len(instructions):
 
     index += 1
 
-print(number_of_sends)
+connection.close()
