@@ -43,29 +43,64 @@ with open('21.input', 'r') as handle:
         outputs.append(result)
         outputs.append(result)
 
+def print_pattern(pattern):
+    for row in pattern:
+        print(''.join(row))
+
+    print()
+
 def get_next(pattern):
     size = len(pattern[0])
 
     if size in (2, 3):
         return outputs[patterns.index(pattern)]
 
-    if size % 2 == 0:
-        next = ([None] * int(size * 3 / 2)) * int(size * 3 / 2)
+    next = []
 
-        for i in range(int(size / 2)):
-            for j in range(int(size / 2)):
+    if size % 2 == 0:
+        for i in range(0, size * 3, 2):
+            row = []
+
+            for j in range(0, size * 3, 2):
+                row.append(None)
+
+            next.append(row)
+
+        for i in range(0, size, 2):
+            for j in range(0, size, 2):
                 subpattern = get_next([
-                    [pattern[i * 2][j * 2], pattern[i * 2][j * 2 + 1]],
-                    [pattern[i * 2 + 1][j * 2], pattern[i * 2 + 1][j * 2 + 1]],
+                    [pattern[i][j], pattern[i][j + 1]],
+                    [pattern[i + 1][j], pattern[i + 1][j + 1]],
                 ])
 
                 for k, row in enumerate(subpattern):
                     for l, character in enumerate(row):
-                        next[i * 3 + k][j * 3 + l] = character
+                        next[int(i * 3 / 2) + k][int(j * 3 / 2) + l] = character
 
-                print(next)
+    else:
+        for i in range(0, size * 4, 3):
+            row = []
 
-for i in range(3):
+            for j in range(0, size * 4, 3):
+                row.append(None)
+
+            next.append(row)
+
+        for i in range(0, size, 3):
+            for j in range(0, size, 3):
+                subpattern = get_next([
+                    [pattern[i][j], pattern[i][j + 1], pattern[i][j + 2]],
+                    [pattern[i + 1][j], pattern[i + 1][j + 1], pattern[i + 1][j + 2]],
+                    [pattern[i + 2][j], pattern[i + 2][j + 1], pattern[i + 2][j + 2]],
+                ])
+
+                for k, row in enumerate(subpattern):
+                    for l, character in enumerate(row):
+                        next[int(i * 4 / 3) + k][int(j * 4 / 3) + l] = character
+
+    return next
+
+for i in range(5):
     current = get_next(current)
 
 print(''.join(''.join(row) for row in current).count('#'))
